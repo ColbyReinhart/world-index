@@ -7,7 +7,7 @@ import java.util.UUID
 
 class LocationSerializer
 {
-	fun serialize(location: Location) = "${location.name},${location.owner},${location.password ?: ""},${location.x},${location.y},${location.z},${location.world}"
+	fun serialize(location: Location) = "${location.name}	${location.owner}	${location.password ?: ""}	${location.x}	${location.y}	${location.z}	${location.world}"
 	fun writeToFile(locations: List<Location>, file: File)
 	{
 		FileWriter(file).use { writer ->
@@ -18,7 +18,7 @@ class LocationSerializer
 		}
 	}
 
-	val locationPattern = Regex("(\\w*),([\\w-]*),(.*),([\\d-]*),([\\d-]*),([\\d-]*),(\\w*)")
+	val locationPattern = Regex("(\\w+)\t([\\w-]+)\t(.*)\t([\\d\\.-]+)\t([\\d\\.-]+)\t([\\d\\.-]+)\t([\\w-]+)")
 	fun deserialize(data: String): Location
 	{
 		val result = locationPattern.matchEntire(data)

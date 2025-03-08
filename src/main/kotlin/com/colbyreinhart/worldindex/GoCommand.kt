@@ -21,7 +21,7 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 			{
 				"to" ->
 				{
-					if (args.size < 1 || args.size > 2) return false
+					if (args.size < 1 || args.size > 3) return false
 					return goTo(sender, args.get(1), args.getOrNull(2))
 				}
 				"list" ->
@@ -32,7 +32,7 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 				}
 				"add" ->
 				{
-					if (args.size < 1 || args.size > 2) return false
+					if (args.size < 1 || args.size > 3) return false
 					return goAdd(sender, args.get(1), args.getOrNull(2))
 				}
 				"remove" ->
@@ -84,14 +84,7 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 				.filter { world -> world.getName().equals(it.world) }
 				.findAny()
 				.get()
-			player.teleport(
-				org.bukkit.Location(
-					destinationWorld,
-					if (it.x >=0) it.x + 0.5 else it.x - 0.5,
-					it.y,
-					if (it.z >=0) it.z + 0.5 else it.z - 0.5
-				)
-			)
+			player.teleport(org.bukkit.Location(destinationWorld, it.x, it.y, it.z))
 		}
 		return true
 	}
@@ -106,8 +99,15 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 		player.sendMessage(message)
 	}
 
+	val validLocationName = Regex("\\w+")
 	protected fun goAdd(player: Player, arg: String, password: String?): Boolean
 	{
+		if (validLocationName.matchEntire(arg) == null)
+		{
+			player.sendMessage("Invalid location name. Location names can only consist of letters, number and underscores.")
+			return true
+		}
+
 		locationManager.locations
 			.stream()
 			.filter { loc -> loc.name.equals(arg, ignoreCase = true) }
