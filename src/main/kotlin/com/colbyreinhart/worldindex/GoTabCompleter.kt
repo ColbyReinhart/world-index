@@ -1,5 +1,7 @@
 package com.colbyreinhart.worldindex
 
+import com.colbyreinhart.worldindex.model.SavedLocation
+import com.colbyreinhart.worldindex.util.uuidToBytes
 import org.bukkit.command.TabCompleter
 import org.bukkit.command.CommandSender
 import org.bukkit.command.Command
@@ -23,54 +25,13 @@ class GoTabCompleter(val locationManager: LocationManager): TabCompleter
 					.filter { verb -> verb.startsWith(args.get(0)) }
 					.toList()
 			}
-			else if (args.size == 1)
-			{
-				when (args.get(0))
-				{
-					"to" ->
-					{
-						return locationManager.locations
-							.stream()
-							.map(Location::name)
-							.toList()
-							.sorted()
-					}
-					"remove" ->
-					{
-						return locationManager.locations
-							.stream()
-							.filter { loc -> loc.owner.equals(sender.getUniqueId()) }
-							.map(Location::name)
-							.toList()
-							.sorted()
-					}
-					else -> emptyList<String>()
-				}
-			}
 			else if (args.size == 2)
 			{
 				when (args.get(0))
 				{
-					"to" ->
-					{
-						return locationManager.locations
-							.stream()
-							.map(Location::name)
-							.filter { loc -> loc.startsWith(args.get(1), ignoreCase = true) }
-							.toList()
-							.sorted()
-					}
-					"remove" ->
-					{
-						return locationManager.locations
-							.stream()
-							.filter { loc -> loc.owner.equals(sender.getUniqueId()) }
-							.map(Location::name)
-							.filter { loc -> loc.startsWith(args.get(1), ignoreCase = true) }
-							.toList()
-							.sorted()
-					}
-					else -> emptyList<String>()
+					"to" -> return locationManager.getLocationList(args.get(1))
+					"remove" -> return locationManager.getLocationList(args.get(1), uuidToBytes(sender.getUniqueId()))
+					else -> return emptyList<String>()
 				}
 			}
 		}

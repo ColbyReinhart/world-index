@@ -8,6 +8,9 @@ import org.bukkit.Bukkit
 import net.kyori.adventure.text.ComponentBuilder
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
+import com.colbyreinhart.worldindex.model.Coordinate
+import com.colbyreinhart.worldindex.model.SavedLocation
+import com.colbyreinhart.worldindex.util.uuidToBytes
 
 class GoCommand(val locationManager: LocationManager): CommandExecutor
 {
@@ -22,7 +25,7 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 				"to" ->
 				{
 					if (args.size < 1 || args.size > 3) return false
-					return goTo(sender, args.get(1), args.getOrNull(2))
+					return goTo(sender, args.get(1))
 				}
 				"list" ->
 				{
@@ -33,7 +36,7 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 				"add" ->
 				{
 					if (args.size < 1 || args.size > 3) return false
-					return goAdd(sender, args.get(1), args.getOrNull(2))
+					return goAdd(sender, args.get(1))
 				}
 				"remove" ->
 				{
@@ -50,42 +53,28 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 		}
 	}
 
-	protected fun goTo(player: Player, arg: String, password: String?): Boolean
+	protected fun goTo(player: Player, arg: String): Boolean
 	{
-		val location = locationManager
-			.locations
-			.stream()
-			.filter { it.name.equals(arg, ignoreCase = true) }
-			.findAny()
-
-		if (location.isEmpty())
-		{
-			player.sendMessage("Location not found: ${arg}")
-			return true
-		}
-
-		location.get().let {
-			if (it.password != null && !it.owner.equals(player.getUniqueId()))
+		val location = locationManager.getLocationByName(arg).let { loc ->
+			if (loc.isEmpty())
 			{
-				if (password == null)
-				{
-					player.sendMessage("This location is password-protected. Please provide a password.")
-					return true
-				}
-				else if (!password.equals(it.password))
-				{
-					player.sendMessage("Incorrect password, please try again.")
-					return true
-				}
+				player.sendMessage("Location not found: ${arg}")
+				return true
 			}
-
-			val destinationWorld = Bukkit.getWorlds()
-				.stream()
-				.filter { world -> world.getName().equals(it.world) }
-				.findAny()
-				.get()
-			player.teleport(org.bukkit.Location(destinationWorld, it.x, it.y, it.z))
+			loc.get()
 		}
+
+		val destinationWorld = Bukkit.getWorlds()
+			.stream()
+			.filter { world -> world.getName().equals(location.world) }
+			.findAny()
+			.get()
+		player.teleport(org.bukkit.Location(
+			destinationWorld,
+			location.coordinates.x,
+			location.coordinates.y,
+			location.coordinates.z)
+		)
 		return true
 	}
 
@@ -93,14 +82,16 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 	{
 		val message = Component.text()
 		message.append(Component.text("Available locations:\n"))
-		locationManager.locations.forEach { location ->
-			message.append(Component.text("  ")).append(location.formattedName()).append(Component.text('\n'))
+		locationManager.getLocationComponentList().forEach { loc ->
+			message.append(Component.text("  "))
+				.append(loc)
+				.append(Component.text('\n'))
 		}
 		player.sendMessage(message)
 	}
 
 	val validLocationName = Regex("\\w+")
-	protected fun goAdd(player: Player, arg: String, password: String?): Boolean
+	protected fun goAdd(player: Player, arg: String): Boolean
 	{
 		if (validLocationName.matchEntire(arg) == null)
 		{
@@ -108,29 +99,24 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 			return true
 		}
 
-		locationManager.locations
-			.stream()
-			.filter { loc -> loc.name.equals(arg, ignoreCase = true) }
-			.findAny()
-			.let {
-				if (it.isPresent())
-				{
-					player.sendMessage("A location with this name already exists.")
-					return true
-				}
+		locationManager.getLocationByName(arg).let {
+			if (it.isPresent())
+			{
+				player.sendMessage("A location with this name already exists.")
+				return true
 			}
+		}
 
-		val location = Location (
-			arg,
-			player.getUniqueId(),
-			password,
-			player.getLocation().x(),
-			player.getLocation().y(),
-			player.getLocation().z(),
-			player.getWorld().getName()
-		)
-		locationManager.locations.add(location)
-		locationManager.persist()
+		locationManager.persist(SavedLocation(
+			name = arg,
+			owner = uuidToBytes(player.getUniqueId()),
+			world = player.getWorld().getName(),
+			coordinates = Coordinate (
+				player.getLocation().x(),
+				player.getLocation().y(),
+				player.getLocation().z()
+			)
+		))
 
 		player.sendMessage("Location added.")
 		return true
@@ -138,28 +124,22 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 
 	protected fun goRemove(player: Player, arg: String): Boolean
 	{
-		val location = locationManager
-			.locations
-			.stream()
-			.filter { it.name.equals(arg, ignoreCase = true) }
-			.findAny()
-
-		if (location.isEmpty())
-		{
-			player.sendMessage("Location not found: ${arg}.")
-			return true
-		}
-
-		location.get().let {
-			if (!it.owner.equals(player.getUniqueId()))
+		val location = locationManager.getLocationByName(arg).let { option ->
+			if (option.isEmpty())
 			{
-				player.sendMessage("You cannot remove a location that you do not own.")
+				player.sendMessage("Location not found: ${arg}.")
 				return true
 			}
-			locationManager.locations.remove(it)
-			locationManager.persist()
-			player.sendMessage("Location removed.")
+			option.get()
 		}
+
+		if (!location.owner.contentEquals(uuidToBytes(player.getUniqueId())))
+		{
+			player.sendMessage("You cannot remove a location that you do not own.")
+			return true
+		}
+		locationManager.delete(location)
+		player.sendMessage("Location removed.")
 
 		return true
 	}
