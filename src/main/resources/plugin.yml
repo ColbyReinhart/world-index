@@ -1,22 +1,25 @@
 api: '1.21.4'
-api-version: '1.0.0'
+api-version: 1.21.4
 name: WorldIndex
-version: '1.0.0'
+version: 1.0.0
 main: 'com.colbyreinhart.worldindex.WorldIndex'
 description: 'Colby''s epic paper plugin'
 author: 'Colby Reinhart'
 website: 'https://colbyreinhart.com'
+libraries:
+  - org.xerial:sqlite-jdbc:3.49.1.0
+  - org.jetbrains.kotlin:kotlin-stdlib:2.1.0
 commands:
   go:
     description: 'Access, use, and contribute to the community teleport list'
     usage: >
       Usage:
-      /go to <location> <password?>
-        Go to the specified location. Password is required if the location is password protected and you are not the owner, and ignored otherwise.
+      /go to <location>
+        Go to the specified location.
       /go list
         List all available locations to go to.
-      /go add <name> <password?>
-        Add a new location to the index. If a password is provided, the location will be password-protected.
+      /go add <name>
+        Add a new location to the index.
       /go remove <name>
         Remove a location from the index. You may only remove locations that you own.
       /go help

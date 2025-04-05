@@ -5,9 +5,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.Command
 import org.bukkit.entity.Player
 import org.bukkit.Bukkit
-import net.kyori.adventure.text.ComponentBuilder
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.TextComponent
 import com.colbyreinhart.worldindex.model.Coordinate
 import com.colbyreinhart.worldindex.model.SavedLocation
 import com.colbyreinhart.worldindex.util.uuidToBytes
