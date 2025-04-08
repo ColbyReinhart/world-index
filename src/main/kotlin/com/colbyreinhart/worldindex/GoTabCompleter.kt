@@ -6,6 +6,7 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.command.CommandSender
 import org.bukkit.command.Command
 import org.bukkit.entity.Player
+import org.bukkit.Bukkit
 
 private val SUBCOMMANDS = listOf("to", "list", "add", "remove")
 
@@ -29,7 +30,7 @@ class GoTabCompleter(val locationManager: LocationManager): TabCompleter
 			{
 				when (args.get(0))
 				{
-					"to" -> return locationManager.getLocationList(args.get(1))
+					"to" -> return getDestinationList(args.get(1))
 					"remove" -> return locationManager.getLocationList(args.get(1), uuidToBytes(sender.getUniqueId()))
 					else -> return emptyList<String>()
 				}
@@ -37,5 +38,31 @@ class GoTabCompleter(val locationManager: LocationManager): TabCompleter
 		}
 
 		return emptyList<String>()
+	}
+
+	protected fun getDestinationList(arg: String): List<String>
+	{
+		val playerList = Bukkit.getOnlinePlayers()
+			.stream()
+			.map(Player::getName)
+			.sorted()
+			.map { name -> "@${name}" }
+			.toList()
+		val locationList = locationManager.getLocationList(arg)
+
+		if (arg.isEmpty())
+		{
+			return playerList.plus(locationList)
+		}
+		else if (arg.startsWith("@"))
+		{
+			return playerList.stream()
+				.filter { name -> arg.isEmpty() || name.startsWith(arg) }
+				.toList()
+		}
+		else
+		{
+			return locationList
+		}
 	}
 }

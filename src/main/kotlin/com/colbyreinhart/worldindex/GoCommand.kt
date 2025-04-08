@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.Command
 import org.bukkit.entity.Player
 import org.bukkit.Bukkit
+import org.bukkit.World
 import net.kyori.adventure.text.Component
 import com.colbyreinhart.worldindex.model.Coordinate
 import com.colbyreinhart.worldindex.model.SavedLocation
@@ -53,26 +54,38 @@ class GoCommand(val locationManager: LocationManager): CommandExecutor
 
 	protected fun goTo(player: Player, arg: String): Boolean
 	{
-		val location = locationManager.getLocationByName(arg).let { loc ->
-			if (loc.isEmpty())
+		if (arg.startsWith("@"))
+		{
+			val destinationPlayer = Bukkit.getPlayerExact(arg.substring(1))
+			if (destinationPlayer == null)
 			{
-				player.sendMessage("Location not found: ${arg}")
-				return true
+				player.sendMessage("Player not found: ${arg.substring(1)}")
+				return true;
 			}
-			loc.get()
+			player.teleport(destinationPlayer.getLocation())
 		}
-
-		val destinationWorld = Bukkit.getWorlds()
-			.stream()
-			.filter { world -> world.getName().equals(location.world) }
-			.findAny()
-			.get()
-		player.teleport(org.bukkit.Location(
-			destinationWorld,
-			location.coordinates.x,
-			location.coordinates.y,
-			location.coordinates.z)
-		)
+		else
+		{
+			val location = locationManager.getLocationByName(arg).let { loc ->
+				if (loc.isEmpty())
+				{
+					player.sendMessage("Location not found: ${arg}")
+					return true
+				}
+				loc.get()
+			}
+			val destinationWorld = Bukkit.getWorlds()
+				.stream()
+				.filter { world -> world.getName().equals(location.world) }
+				.findAny()
+				.get()
+			player.teleport(org.bukkit.Location(
+				destinationWorld,
+				location.coordinates.x,
+				location.coordinates.y,
+				location.coordinates.z)
+			)
+		}
 		return true
 	}
 
