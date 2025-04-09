@@ -30,7 +30,7 @@ class GoTabCompleter(val locationManager: LocationManager): TabCompleter
 			{
 				when (args.get(0))
 				{
-					"to" -> return getDestinationList(args.get(1))
+					"to" -> return getDestinationList(sender, args.get(1))
 					"remove" -> return locationManager.getLocationList(args.get(1), uuidToBytes(sender.getUniqueId()))
 					else -> return emptyList<String>()
 				}
@@ -40,10 +40,11 @@ class GoTabCompleter(val locationManager: LocationManager): TabCompleter
 		return emptyList<String>()
 	}
 
-	protected fun getDestinationList(arg: String): List<String>
+	protected fun getDestinationList(sender: Player, arg: String): List<String>
 	{
 		val playerList = Bukkit.getOnlinePlayers()
 			.stream()
+			.filter { player -> !player.equals(sender) }
 			.map(Player::getName)
 			.sorted()
 			.map { name -> "@${name}" }
